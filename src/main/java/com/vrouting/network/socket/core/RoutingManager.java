@@ -1,7 +1,9 @@
 package com.vrouting.network.socket.core;
 
+import com.vrouting.network.Node;
 import com.vrouting.network.socket.message.Message;
 import com.vrouting.network.socket.message.MessageType;
+import com.vrouting.network.socket.core.PayloadWrapper;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,7 +42,7 @@ public class RoutingManager {
             ROUTE_UPDATE_INTERVAL,
             TimeUnit.MILLISECONDS
         );
-        logger.info("RoutingManager started for node {}", node.getNodeId());
+        logger.info("RoutingManager started for node {}", node.getId());
     }
     
     public void stop() {
@@ -53,7 +55,7 @@ public class RoutingManager {
             scheduler.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        logger.info("RoutingManager stopped for node {}", node.getNodeId());
+        logger.info("RoutingManager stopped for node {}", node.getId());
     }
     
     public Message handleRouteRequest(Message request) {
@@ -65,11 +67,12 @@ public class RoutingManager {
         if (route != null) {
             // Send route reply
             Message reply = new Message(
-                node.getNodeId(),
+                node.getId(),
                 sourceId,
                 MessageType.ROUTE_REPLY
             );
-            reply.setPayload("route", route);
+            PayloadWrapper payload = new PayloadWrapper("route", route);
+            reply.setPayload(payload);
             return reply;
         }
         return null;
@@ -77,7 +80,8 @@ public class RoutingManager {
     
     public Message handleRouteReply(Message reply) {
         try {
-            Route route = reply.getPayload("route", Route.class);
+            PayloadWrapper payload = (PayloadWrapper) reply.getPayload();
+            Route route = payload.getRoute();
             if (route != null) {
                 updateRoute(route);
             }

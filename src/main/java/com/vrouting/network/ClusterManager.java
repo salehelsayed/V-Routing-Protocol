@@ -19,7 +19,6 @@ public class ClusterManager {
 
     public void addNode(Node node, Cluster cluster) {
         nodes.put(node.getId(), node);
-        cluster.addNode(node);
         nodeClusterMap.put(node.getId(), cluster);
     }
 
@@ -101,11 +100,11 @@ public class ClusterManager {
                 // In real implementation, this would use actual network communication
             }
         }
-
-        // Propagate to other clusters through secure tunnels
-        for (Cluster targetCluster : clusters.values()) {
-            if (targetCluster != sourceCluster) {
-                sourceCluster.sendMessageToCluster(targetCluster, message);
+        
+        // Propagate to other clusters through cluster heads
+        for (Cluster cluster : clusters.values()) {
+            if (cluster != sourceCluster) {
+                cluster.sendMessageToCluster(sourceCluster, message);
             }
         }
     }

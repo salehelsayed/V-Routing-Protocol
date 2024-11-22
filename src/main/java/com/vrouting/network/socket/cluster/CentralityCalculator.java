@@ -1,6 +1,6 @@
 package com.vrouting.network.socket.cluster;
 
-import com.vrouting.network.socket.core.Node;
+import com.vrouting.network.Node;
 import com.vrouting.network.socket.core.PeerDirectory;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;

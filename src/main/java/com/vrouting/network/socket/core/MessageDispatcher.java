@@ -1,5 +1,6 @@
 package com.vrouting.network.socket.core;
 
+import com.vrouting.network.Node;
 import com.vrouting.network.socket.message.Message;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +35,7 @@ public class MessageDispatcher {
         
         String destinationId = message.getDestinationNodeId();
         
-        if (node.getNodeId().equals(destinationId)) {
+        if (node.getId().equals(destinationId)) {
             // Message is for us
             node.processMessage(message);
         } else if (destinationId == null) {
@@ -52,7 +53,7 @@ public class MessageDispatcher {
         }
         
         // Add ourselves to the routing history
-        message.addToRoute(node.getNodeId());
+        message.addToRoute(node.getId());
         
         // Send to all peers except those in routing history
         node.getPeerDirectory().getAllPeers().stream()
@@ -71,11 +72,11 @@ public class MessageDispatcher {
         }
         
         // Add ourselves to the routing history
-        message.addToRoute(node.getNodeId());
+        message.addToRoute(node.getId());
         
         String destinationId = message.getDestinationNodeId();
         
-        if (node.getNodeId().equals(destinationId)) {
+        if (node.getId().equals(destinationId)) {
             // Message is for us, process it
             return node.processMessage(message);
         } else {
@@ -101,7 +102,7 @@ public class MessageDispatcher {
     
     private void forwardMessage(Message message) {
         // Add ourselves to the routing history
-        message.addToRoute(node.getNodeId());
+        message.addToRoute(node.getId());
         
         // Get next hop from routing manager
         String nextHop = node.getRoutingManager().getNextHop(message.getDestinationNodeId());

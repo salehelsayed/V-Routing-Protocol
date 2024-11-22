@@ -1,159 +1,156 @@
 package com.vrouting.network.socket.message;
 
-import com.vrouting.network.socket.core.Phase;
-import com.vrouting.network.socket.core.NodeMetrics;
+import com.vrouting.network.socket.routing.RoutingEntry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import java.io.Serializable;
-import java.util.*;
-import com.google.gson.Gson;
-
-/**
- * Represents a message in the V-Routing Protocol.
- * Messages contain routing information, payload data, and metadata for network management.
- */
-public class Message implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private static final Gson gson = new Gson();
-    
-    private final String id;
-    private final String sourceNodeId;
-    private String destinationNodeId; 
-    private final MessageType type;
-    private final List<String> routeHistory;
-    private final Map<String, String> payload;
+public class Message {
+    private String id;
+    private String sourceId;
+    private String destinationId;
+    private MessageType type;
+    private RoutingEntry routingEntry;
+    private List<String> routeHistory;
+    private Object payload;
     private int hopCount;
-    private static final int MAX_HOPS = 10;
-    
-    /**
-     * Creates a new message with the specified parameters.
-     */
-    public Message(String sourceNodeId, String destinationNodeId, MessageType type) {
+    private int maxHops;
+    private Phase phase;
+    private int depth;
+    private NodeMetrics metrics;
+
+    public Message() {
         this.id = UUID.randomUUID().toString();
-        this.sourceNodeId = sourceNodeId;
-        this.destinationNodeId = destinationNodeId;
-        this.type = type;
         this.routeHistory = new ArrayList<>();
-        this.payload = new HashMap<>();
         this.hopCount = 0;
+        this.maxHops = 10; // Default max hops
     }
-    
-    public static Message createHeartbeat(String sourceNodeId, MessageType type) {
-        if (!isHeartbeatType(type)) {
-            throw new IllegalArgumentException("Invalid heartbeat message type: " + type);
-        }
-        return new Message(sourceNodeId, null, type);
+
+    public Message(String sourceId, String destinationId, MessageType type, Object payload) {
+        this();
+        this.sourceId = sourceId;
+        this.destinationId = destinationId;
+        this.type = type;
+        this.payload = payload;
     }
-    
-    public static Message createClusterResponse(String sourceNodeId, String destinationNodeId, 
-                                              MessageType type, String message) {
-        Message response = new Message(sourceNodeId, destinationNodeId, type);
-        response.setPayload("message", message);
-        return response;
-    }
-    
-    private static boolean isHeartbeatType(MessageType type) {
-        return type == MessageType.HEARTBEAT_DISCOVERY ||
-               type == MessageType.HEARTBEAT_STABLE ||
-               type == MessageType.HEARTBEAT_UPDATE;
-    }
-    
+
     public String getId() {
         return id;
     }
-    
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
     public String getSourceNodeId() {
-        return sourceNodeId;
+        return sourceId;
     }
-    
-    public String getSource() { 
-        return sourceNodeId; 
-    }  
-    
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public String getDestinationId() {
+        return destinationId;
+    }
+
     public String getDestinationNodeId() {
-        return destinationNodeId;
+        return destinationId;
     }
-    
-    public void setDestinationNodeId(String destinationNodeId) {
-        this.destinationNodeId = destinationNodeId;
+
+    public void setDestinationId(String destinationId) {
+        this.destinationId = destinationId;
     }
-    
+
+    public void setDestinationNodeId(String destinationId) {
+        this.destinationId = destinationId;
+    }
+
     public MessageType getType() {
         return type;
     }
-    
+
+    public void setType(MessageType type) {
+        this.type = type;
+    }
+
+    public RoutingEntry getRoutingEntry() {
+        return routingEntry;
+    }
+
+    public void setRoutingEntry(RoutingEntry routingEntry) {
+        this.routingEntry = routingEntry;
+    }
+
     public List<String> getRouteHistory() {
-        return Collections.unmodifiableList(routeHistory);
+        return routeHistory;
     }
-    
+
     public void addToRoute(String nodeId) {
-        if (routeHistory.size() >= MAX_HOPS) {
-            throw new IllegalStateException("Maximum hop count exceeded");
-        }
-        routeHistory.add(nodeId);
-        hopCount++;
+        this.routeHistory.add(nodeId);
+        this.hopCount++;
     }
-    
+
+    public Object getPayload() {
+        return payload;
+    }
+
+    public void setPayload(Object payload) {
+        this.payload = payload;
+    }
+
     public int getHopCount() {
         return hopCount;
     }
-    
+
     public int getMaxHops() {
-        return MAX_HOPS;
+        return maxHops;
     }
-    
-    public <T> void setPayload(String key, T value) {
-        payload.put(key, gson.toJson(value));
+
+    public void setMaxHops(int maxHops) {
+        this.maxHops = maxHops;
     }
-    
-    public <T> T getPayload(String key, Class<T> type) {
-        String json = payload.get(key);
-        return json != null ? gson.fromJson(json, type) : null;
+
+    public Phase getPhase() {
+        return phase;
     }
-    
-    public boolean hasVisited(String nodeId) {
-        return routeHistory.contains(nodeId);
-    }
-    
+
     public void setPhase(Phase phase) {
-        payload.put("phase", gson.toJson(phase));
+        this.phase = phase;
     }
-    
-    public void setDepth(int depth) {
-        payload.put("depth", gson.toJson(depth));
-    }
-    
-    public void setMetrics(NodeMetrics metrics) {
-        payload.put("metrics", gson.toJson(metrics));
-    }
-    
+
     public int getDepth() {
-        return gson.fromJson(payload.get("depth"), Integer.class);
+        return depth;
     }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Message message = (Message) o;
-        return id.equals(message.id);
+
+    public void setDepth(int depth) {
+        this.depth = depth;
     }
-    
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(id);
+
+    public NodeMetrics getMetrics() {
+        return metrics;
     }
-    
-    @Override
-    public String toString() {
-        return String.format("Message[id=%s, type=%s, source=%s, destination=%s, hops=%d]",
-                           id, type, sourceNodeId, destinationNodeId, hopCount);
+
+    public void setMetrics(NodeMetrics metrics) {
+        this.metrics = metrics;
     }
-    
+
     public Message copy() {
-        Message copy = new Message(sourceNodeId, destinationNodeId, type);
-        copy.routeHistory.addAll(this.routeHistory);
-        copy.payload.putAll(this.payload);
+        Message copy = new Message(sourceId, destinationId, type);
+        copy.routingEntry = this.routingEntry;
+        copy.routeHistory = new ArrayList<>(this.routeHistory);
+        copy.payload = this.payload;
         copy.hopCount = this.hopCount;
+        copy.maxHops = this.maxHops;
+        copy.phase = this.phase;
+        copy.depth = this.depth;
+        copy.metrics = this.metrics;
         return copy;
+    }
+
+    public static Message createClusterResponse(String sourceId, String destinationId, MessageType type, String clusterId) {
+        Message response = new Message(sourceId, destinationId, type);
+        response.setPayload(clusterId);
+        return response;
     }
 }

@@ -7,6 +7,11 @@ package com.vrouting.network.socket.core;
  */
 public enum Phase {
     /**
+     * Initial state of the node.
+     */
+    INITIAL,
+    
+    /**
      * Initial discovery phase where node is discovering its neighbors.
      */
     DISCOVERY,
@@ -18,12 +23,9 @@ public enum Phase {
     STABILIZATION,
     
     /**
-     * Normal operation phase where routing and message forwarding occur.
+     * Maintenance phase where the node performs periodic checks and adjustments.
      */
-    REGULAR,
-    
-    /**
-     * Stable operation phase with optimized routing and cluster structure.
-     */
-    STABLE
+    MAINTENANCE,
+
+    REGULAR
 }

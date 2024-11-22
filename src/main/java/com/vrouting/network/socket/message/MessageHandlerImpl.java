@@ -1,90 +1,117 @@
 package com.vrouting.network.socket.message;
 
-import com.vrouting.network.socket.core.Node;
+import com.vrouting.network.Node;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * Implementation of MessageHandler interface.
+ * Implementation of the MessageHandler interface for processing network messages.
  */
 public class MessageHandlerImpl implements MessageHandler {
     private static final Logger logger = Logger.getLogger(MessageHandlerImpl.class.getName());
-    
     private final Node node;
+    private final ExecutorService messageExecutor;
     private final BlockingQueue<Message> messageQueue;
-    private final ExecutorService executor;
     private final AtomicBoolean isRunning;
-    
+
     public MessageHandlerImpl(Node node) {
         this.node = node;
+        this.messageExecutor = Executors.newSingleThreadExecutor();
         this.messageQueue = new LinkedBlockingQueue<>();
-        this.executor = Executors.newSingleThreadExecutor();
-        this.isRunning = new AtomicBoolean(false);
+        this.isRunning = new AtomicBoolean(true);
+        startMessageProcessor();
     }
-    
-    @Override
-    public void start() {
-        if (isRunning.compareAndSet(false, true)) {
-            executor.submit(this::processMessages);
-            logger.info("Message handler started for node " + node.getNodeId());
-        }
-    }
-    
-    @Override
-    public void stop() {
-        if (isRunning.compareAndSet(true, false)) {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
+
+    private void startMessageProcessor() {
+        messageExecutor.submit(() -> {
+            while (isRunning.get()) {
+                try {
+                    Message message = messageQueue.poll(100, TimeUnit.MILLISECONDS);
+                    if (message != null) {
+                        processMessageInternal(message);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    logger.warning("Error processing message: " + e.getMessage());
                 }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
             }
-            logger.info("Message handler stopped for node " + node.getNodeId());
+        });
+    }
+
+    @Override
+    public void processMessage(Message message) {
+        if (message != null && isRunning.get()) {
+            messageQueue.offer(message);
         }
     }
-    
+
+    private void processMessageInternal(Message message) {
+        try {
+            switch (message.getType()) {
+                case HEARTBEAT:
+                    handleHeartbeat(message);
+                    break;
+                case ROUTING_UPDATE:
+                    handleRoutingUpdate(message);
+                    break;
+                case CLUSTER_UPDATE:
+                    handleClusterUpdate(message);
+                    break;
+                default:
+                    logger.warning("Unknown message type: " + message.getType());
+            }
+        } catch (Exception e) {
+            logger.warning("Error processing message: " + e.getMessage());
+        }
+    }
+
+    private void handleHeartbeat(Message message) {
+        if (node.getPeerDirectory() != null) {
+            node.getPeerDirectory().updatePeerLastSeen(message.getSourceId());
+        }
+    }
+
+    private void handleRoutingUpdate(Message message) {
+        if (node.getRoutingTable() != null) {
+            node.getRoutingTable().updateEntry(message.getRoutingEntry());
+        }
+    }
+
+    private void handleClusterUpdate(Message message) {
+        if (node.getClusterManager() != null) {
+            node.getClusterManager().handleClusterUpdate(message);
+        }
+    }
+
+    @Override
+    public void sendMessage(Message message) {
+        if (message != null && isRunning.get()) {
+            // Logic to send the message
+            logger.info("Sending message: " + message);
+        }
+    }
+
     @Override
     public Message handleMessage(Message message) {
-        if (isRunning.get()) {
-            messageQueue.offer(message);
-            return message; // Return the message after offering it to the queue
-        }
-        return null; // Return null if the handler is not running
+        // Logic to handle the message
+        logger.info("Handling message: " + message);
+        return message; // Return the processed message
     }
-    
-    private void processMessages() {
-        while (isRunning.get()) {
-            try {
-                Message message = messageQueue.poll(100, TimeUnit.MILLISECONDS);
-                if (message != null) {
-                    try {
-                        node.processMessage(message);
-                    } catch (Exception e) {
-                        logger.warning("Error processing message: " + e.getMessage());
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+
+    @Override
+    public void shutdown() {
+        isRunning.set(false);
+        messageExecutor.shutdown();
+        try {
+            if (!messageExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                messageExecutor.shutdownNow();
             }
+        } catch (InterruptedException e) {
+            messageExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
-    }
-    
-    /**
-     * Gets the current queue size.
-     */
-    public int getQueueSize() {
-        return messageQueue.size();
-    }
-    
-    /**
-     * Checks if the handler is currently running.
-     */
-    public boolean isRunning() {
-        return isRunning.get();
     }
 }

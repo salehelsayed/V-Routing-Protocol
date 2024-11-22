@@ -1,6 +1,6 @@
 package com.vrouting.network.socket.message;
 
-import com.vrouting.network.socket.core.Node;
+
 
 /**
  * Interface for handling message processing and dispatching for a node.
@@ -22,4 +22,8 @@ public interface MessageHandler {
      * @return The processed message
      */
     Message handleMessage(Message message);
+
+    void processMessage(Message message);
+    void sendMessage(Message message);
+    void shutdown();
 }

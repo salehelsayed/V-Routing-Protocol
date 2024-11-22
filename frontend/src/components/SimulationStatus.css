@@ -1,0 +1,96 @@
+.simulation-status {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.simulation-status h3 {
+    margin-top: 0;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.status-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-item label {
+    font-weight: bold;
+    color: #555;
+    min-width: 80px;
+}
+
+.status-state {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.status-state.idle {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.status-state.initializing {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-state.running {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status-state.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-state.stopped {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease-in-out;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #333;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.status-message {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.9em;
+}

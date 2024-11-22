@@ -1,6 +1,6 @@
 package com.vrouting.network.socket.cluster;
 
-import com.vrouting.network.socket.core.Node;
+import com.vrouting.network.Node;
 import com.vrouting.network.socket.message.Message;
 import com.vrouting.network.socket.message.MessageType;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import java.util.concurrent.*;
 
 public class ClusterManager {
     private static final Logger logger = LoggerFactory.getLogger(ClusterManager.class);
-    private final Node node;
+    private final Node node; 
     private final CentralityCalculator centralityCalculator;
     private String clusterHeadId;
     private final Map<String, Long> clusterMembers;
@@ -23,6 +23,14 @@ public class ClusterManager {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
     
+    private String getNodeId() {
+        return node.getId();
+    }
+
+    private void sendMessage(Message message) {
+        node.sendMessage(message);
+    }
+
     public void start() {
         scheduler.scheduleAtFixedRate(this::performMaintenance, 0, 30, TimeUnit.SECONDS);
     }
@@ -75,16 +83,16 @@ public class ClusterManager {
             return;
         }
         
-        if (node.getNodeId().equals(clusterHeadId)) {
+        if (getNodeId().equals(clusterHeadId)) {
             // We are the cluster head, process join request
             clusterMembers.put(sourceId, System.currentTimeMillis());
             Message response = Message.createClusterResponse(
-                node.getNodeId(),
+                getNodeId(),
                 sourceId,
                 MessageType.ACK,
                 "Join request accepted"
             );
-            node.sendMessage(response);
+            sendMessage(response);
             logger.info("Accepted join request from node: {}", sourceId);
         }
     }
@@ -99,51 +107,50 @@ public class ClusterManager {
     private void handleClusterUpdate(Message message) {
         // Handle updates about cluster state
         String newClusterHead = message.getSourceNodeId();
-        if (newClusterHead != null && !newClusterHead.equals(clusterHeadId)) {
+        if (newClusterHead != null) {
             clusterHeadId = newClusterHead;
             logger.info("Updated cluster head to: {}", newClusterHead);
         }
     }
-    
+
+    private void evaluateClusterHeadRole() {
+        if (node.isEligibleForClusterHead()) {
+            clusterHeadId = getNodeId();
+            logger.info("Node {} became cluster head", getNodeId());
+        }
+    }
+
     public void stop() {
-        logger.info("Stopping cluster manager");
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
                 scheduler.shutdownNow();
             }
         } catch (InterruptedException e) {
+            scheduler.shutdownNow();
             Thread.currentThread().interrupt();
-            logger.warn("Interrupted while stopping cluster manager", e);
         }
     }
-    
+
     public boolean isClusterHead() {
-        return node.getNodeId().equals(clusterHeadId);
+        return getNodeId().equals(clusterHeadId);
     }
-    
+
     public String getClusterHeadId() {
         return clusterHeadId;
     }
-    
+
     public Set<String> getClusterMembers() {
         return new HashSet<>(clusterMembers.keySet());
     }
-    
-    public void evaluateClusterHeadRole() {
-        if (centralityCalculator.isEligibleForClusterHead()) {
-            clusterHeadId = node.getNodeId();
-            broadcastClusterHeadStatus();
-        }
-    }
-    
+
     private void broadcastClusterHeadStatus() {
         Message announcement = Message.createClusterResponse(
-            node.getNodeId(),
+            getNodeId(),
             null, // broadcast to all
             MessageType.UPDATE,
             "New cluster head"
         );
-        node.broadcast(announcement);
+        sendMessage(announcement);
     }
 }

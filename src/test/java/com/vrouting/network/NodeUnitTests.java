@@ -6,6 +6,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.vrouting.network.socket.core.Phase;
 
 public class NodeUnitTests {
     private Node testNode;
@@ -23,14 +24,14 @@ public class NodeUnitTests {
     @Test
     void testHeartbeatPhaseTransitions() {
         // Test initial phase
-        assertEquals(HeartbeatPhase.DISCOVERY, testNode.getCurrentHeartbeatPhase());
+        assertEquals(Phase.DISCOVERY, testNode.getPhase());
         
         // Simulate time passing for phase transitions
         testNode.updateHeartbeatPhase();
-        assertEquals(HeartbeatPhase.STABILIZATION, testNode.getCurrentHeartbeatPhase());
+        assertEquals(Phase.STABILIZATION, testNode.getPhase());
         
         testNode.updateHeartbeatPhase();
-        assertEquals(HeartbeatPhase.MAINTENANCE, testNode.getCurrentHeartbeatPhase());
+        assertEquals(Phase.REGULAR, testNode.getPhase());
     }
     
     @Test
