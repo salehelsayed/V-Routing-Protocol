@@ -29,10 +29,13 @@ dependencies {
     
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'  
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
     // Mockito for mocking in tests
     testImplementation 'org.mockito:mockito-core:4.11.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
+    // AssertJ for fluent assertions
+    testImplementation 'org.assertj:assertj-core:3.24.2'
 }
 
 java {
@@ -45,7 +48,16 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
         showStandardStreams = true
+        showExceptions true
+        showCauses true
+        showStackTraces true
+        exceptionFormat = 'full'
     }
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
 // Task to build JAR with dependencies
