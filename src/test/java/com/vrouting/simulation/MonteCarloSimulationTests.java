@@ -31,24 +31,25 @@ public class MonteCarloSimulationTests {
     @Test
     void testSimulationRunAndDisplay() {
         // Start the simulation
-        engine.initializeNetwork(NODE_COUNT);
+        String simulationId = engine.startSimulation(NODE_COUNT);
 
         // Monitor the simulation progress
-        while (!engine.isSimulationComplete()) {
+        while (!engine.isSimulationComplete(simulationId)) {
             try {
-                engine.simulateStep();
+                engine.stepSimulation(simulationId);
 
-                List<SimulationMetrics> metricsList = engine.getMetrics();
+                List<SimulationMetrics> metricsList = engine.getSimulationMetrics(simulationId);
                 SimulationMetrics finalMetrics = metricsList.get(metricsList.size() - 1);
-                System.out.println("Step: " + engine.getCurrentStep());
+
+                System.out.println("Step: " + engine.getCurrentStep(simulationId));
                 System.out.println("Active Nodes: " + finalMetrics.getActiveNodeCount());
                 System.out.println("Failed Nodes: " + finalMetrics.getFailedNodeCount());
                 System.out.println("Message Delivery Rate: " + finalMetrics.getMessageDeliveryRate());
                 System.out.println("Average Latency: " + finalMetrics.getAverageLatency());
                 System.out.println("---------------");
 
-                // Optionally, you can add a short sleep to simulate real-time monitoring
-                Thread.sleep(500); // Sleep for 500 milliseconds
+                // Optional sleep for real-time simulation effect
+                Thread.sleep(500);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -58,7 +59,7 @@ public class MonteCarloSimulationTests {
 
         // Report simulation completion
         System.out.println("Simulation completed.");
-        List<SimulationMetrics> metricsList = engine.getMetrics();
+        List<SimulationMetrics> metricsList = engine.getSimulationMetrics(simulationId);
         SimulationMetrics finalMetrics = metricsList.get(metricsList.size() - 1);
         System.out.println("Final Active Nodes: " + finalMetrics.getActiveNodeCount());
         System.out.println("Final Message Delivery Rate: " + finalMetrics.getMessageDeliveryRate());
@@ -69,7 +70,7 @@ public class MonteCarloSimulationTests {
         double deliveryRate = finalMetrics.getMessageDeliveryRate();
         System.out.println("Final Message Delivery Rate: " + deliveryRate);
 
-        // Adjust assertion to reflect expected outcome
+        // Adjust assertion if needed
         // assertTrue(deliveryRate > 0.8, "Expected delivery rate to be greater than 0.8 but was " + deliveryRate);
     }
 
@@ -139,18 +140,22 @@ public class MonteCarloSimulationTests {
     @Test
     void testSimulationWithRandomNodeJoining() {
         // Initialize the simulation
-        engine.initializeNetwork(NODE_COUNT);
+        String simulationId = engine.startSimulation(NODE_COUNT);
 
         // Monitor the simulation progress
-        while (!engine.isSimulationComplete()) {
+        while (!engine.isSimulationComplete(simulationId)) {
             try {
-                engine.simulateStep();
+                engine.stepSimulation(simulationId);
 
                 // Retrieve and display metrics
-                List<SimulationMetrics> metricsList = engine.getMetrics();
+                List<SimulationMetrics> metricsList = engine.getSimulationMetrics(simulationId);
                 SimulationMetrics currentMetrics = metricsList.get(metricsList.size() - 1);
-                System.out.println("Step: " + engine.getCurrentStep());
-                System.out.println("Total Nodes: " + engine.getNodes().size());
+                System.out.println("Step: " + engine.getCurrentStep(simulationId));
+
+                // Get nodes
+                List<Node> nodes = engine.getSimulationNodes(simulationId);
+
+                System.out.println("Total Nodes: " + nodes.size());
                 System.out.println("Active Nodes: " + currentMetrics.getActiveNodeCount());
                 System.out.println("Failed Nodes: " + currentMetrics.getFailedNodeCount());
                 System.out.println("Message Delivery Rate: " + currentMetrics.getMessageDeliveryRate());

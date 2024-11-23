@@ -47,13 +47,7 @@ public class SimulationService {
         
         try {
             // Create simulation engine with configuration
-            SimulationEngine engine = new SimulationEngine(
-                request.getNodeCount(),
-                0.1,  // Default failure probability
-                0.3,  // Default recovery probability
-                0.2,  // Default message generation probability
-                request.getDuration() * 10  // Convert duration to steps
-            );
+            SimulationEngine engine = new SimulationEngine();
             
             // Create and initialize nodes
             List<Node> nodes = createNodes(request.getNodeCount());
@@ -63,7 +57,7 @@ public class SimulationService {
             nodes.forEach(Node::start);
             
             // Start the simulation engine
-            engine.startSimulation();
+            engine.startSimulation(request.getNodeCount());
             
             simulationEngines.put(simulationId, engine);
             latestSimulationId = simulationId;
@@ -144,8 +138,8 @@ public class SimulationService {
         
         return Map.of(
             "initialized", true,
-            "simulationComplete", engine.isSimulationComplete(),
-            "stepsCompleted", engine.getCurrentStep(),
+            "simulationComplete", engine.isSimulationComplete(simulationId),
+            "stepsCompleted", engine.getCurrentStep(simulationId),
             "totalSteps", engine.getSimulationSteps(),
             "activeSimulations", simulationEngines.size(),
             "activeNodes", activeNodeCount,
