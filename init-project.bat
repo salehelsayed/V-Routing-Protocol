@@ -14,4 +14,4 @@ del gradle.zip
 rmdir /s /q gradle-7.6.1
 
 echo Project initialization complete!
-pause
+pause 
