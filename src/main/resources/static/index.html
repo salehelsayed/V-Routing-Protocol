@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .metrics-table th, .metrics-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        .metrics-table th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            margin-top: 20px;
+            height: 400px;
+        }
+        .status-indicator {
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .running {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .completed {
+            background-color: #2196F3;
+            color: white;
+        }
+        .not-started {
+            background-color: #9E9E9E;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>V-Routing Protocol Simulation Dashboard</h1>
+
+    <div class="controls">
+        <h3>Simulation Configuration</h3>
+        <form id="simulationForm">
+            <label for="nodeCount">Node Count:</label>
+            <input type="number" id="nodeCount" name="nodeCount" value="50"><br><br>
+
+            <label for="failureProbability">Failure Probability:</label>
+            <input type="number" step="0.01" id="failureProbability" name="failureProbability" value="0.1"><br><br>
+
+            <label for="recoveryProbability">Recovery Probability:</label>
+            <input type="number" step="0.01" id="recoveryProbability" name="recoveryProbability" value="0.3"><br><br>
+
+            <label for="messageGenerationProbability">Message Generation Probability:</label>
+            <input type="number" step="0.01" id="messageGenerationProbability" name="messageGenerationProbability" value="0.2"><br><br>
+
+            <label for="simulationSteps">Simulation Steps:</label>
+            <input type="number" id="simulationSteps" name="simulationSteps" value="100"><br><br>
+
+            <button type="button" onclick="startSimulation()" class="start-button">Start Simulation</button>
+        </form>
+    </div>
+
+    <div id="simulationStatus">
+        <h3>Simulation Status</h3>
+        <p>Status: <span id="statusText" class="status-indicator not-started">Not Started</span></p>
+        <p>Steps Completed: <span id="stepsCompleted">0</span></p>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="metricsChart"></canvas>
+    </div>
+
+    <div id="metrics">
+        <h3>Detailed Metrics</h3>
+        <table class="metrics-table" id="metricsTable">
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Active Nodes</th>
+                    <th>Failed Nodes</th>
+                    <th>Message Delivery Rate</th>
+                    <th>Average Latency</th>
+                    <th>Messages Sent</th>
+                    <th>Messages Delivered</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Metrics will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let metricsChart;
+
+        function initChart() {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            metricsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Active Nodes',
+                        borderColor: 'rgb(75, 192, 192)',
+                        data: []
+                    }, {
+                        label: 'Message Delivery Rate',
+                        borderColor: 'rgb(255, 99, 132)',
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        initChart();
+
+        function startSimulation() {
+            const config = {
+                nodeCount: parseInt(document.getElementById('nodeCount').value),
+                failureProbability: parseFloat(document.getElementById('failureProbability').value),
+                recoveryProbability: parseFloat(document.getElementById('recoveryProbability').value),
+                messageGenerationProbability: parseFloat(document.getElementById('messageGenerationProbability').value),
+                simulationSteps: parseInt(document.getElementById('simulationSteps').value)
+            };
+
+            // Update status indicator
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = 'Running';
+            statusText.className = 'status-indicator running';
+
+            fetch('/api/simulation/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config),
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('stepsCompleted').textContent = '0';
+                setTimeout(checkStatusAndMetrics, 1000);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                statusText.textContent = 'Error';
+                statusText.className = 'status-indicator not-started';
+            });
+        }
+
+        function checkStatusAndMetrics() {
+            fetch('/api/simulation/status')
+                .then(response => response.json())
+                .then(status => {
+                    const statusText = document.getElementById('statusText');
+                    statusText.textContent = status.simulationComplete ? 'Completed' : 'Running';
+                    statusText.className = `status-indicator ${status.simulationComplete ? 'completed' : 'running'}`;
+                    
+                    document.getElementById('stepsCompleted').textContent = status.stepsCompleted;
+                    
+                    fetchMetrics();
+                    
+                    if (!status.simulationComplete) {
+                        setTimeout(checkStatusAndMetrics, 1000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function fetchMetrics() {
+            fetch('/api/simulation/metrics')
+                .then(response => response.json())
+                .then(metrics => {
+                    updateTable(metrics);
+                    updateChart(metrics);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function updateTable(metrics) {
+            const tbody = document.querySelector('#metricsTable tbody');
+            tbody.innerHTML = '';
+            metrics.forEach(metric => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${metric.step}</td>
+                    <td>${metric.activeNodeCount}</td>
+                    <td>${metric.failedNodeCount}</td>
+                    <td>${metric.messageDeliveryRate.toFixed(2)}</td>
+                    <td>${metric.averageLatency.toFixed(2)}</td>
+                    <td>${metric.totalMessagesSent}</td>
+                    <td>${metric.totalMessagesDelivered}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateChart(metrics) {
+            const labels = metrics.map(m => m.step);
+            const activeNodes = metrics.map(m => m.activeNodeCount);
+            const deliveryRates = metrics.map(m => m.messageDeliveryRate);
+
+            metricsChart.data.labels = labels;
+            metricsChart.data.datasets[0].data = activeNodes;
+            metricsChart.data.datasets[1].data = deliveryRates;
+            metricsChart.update();
+        }
+    </script>
+</body>
+</html> 
