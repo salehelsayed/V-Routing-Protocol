@@ -75,10 +75,6 @@ public class PeerDirectory {
         return new HashSet<>(peers.keySet());
     }
     
-    public Set<String> getAllPeerIds() {
-        return new HashSet<>(peers.keySet());
-    }
-    
     public PeerInfo getPeerInfo(String peerId) {
         return peers.get(peerId);
     }
@@ -140,10 +136,6 @@ public class PeerDirectory {
     public int getNodeIndex(String nodeId) {
         List<String> nodeIds = new ArrayList<>(adjacencyMatrix.keySet());
         return nodeIds.indexOf(nodeId);
-    }
-    
-    public void updatePeerInfo(String nodeId, Message message) {
-        updatePeer(nodeId, message);
     }
     
     public void cleanupStaleEntries(long maxAge) {
@@ -220,7 +212,7 @@ public class PeerDirectory {
             this.timestamp = timestamp;
         }
         
-        public List<String> getRoute() { return route; }
+        public List<String> getRoute() { return new ArrayList<>(route); }
         public long getTimestamp() { return timestamp; }
     }
 }

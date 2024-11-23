@@ -8,7 +8,10 @@ import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.alg.scoring.EigenvectorCentrality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.*;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Calculates network centrality metrics for nodes in the network.
@@ -67,7 +70,7 @@ public class CentralityCalculator {
         Graph<String, DefaultEdge> graph = new SimpleGraph<>(DefaultEdge.class);
         
         // Add vertices
-        Set<String> peers = peerDirectory.getAllPeerIds();
+        Set<String> peers = new HashSet<>(peerDirectory.getAllPeers());
         peers.add(node.getNodeId());
         peers.forEach(graph::addVertex);
         

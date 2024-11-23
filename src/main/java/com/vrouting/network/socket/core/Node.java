@@ -141,7 +141,7 @@ public abstract class Node {
     }
 
     public void updatePeerInfo(String nodeId, Message message) {
-        peerDirectory.updatePeerInfo(nodeId, message);
+        peerDirectory.updatePeer(nodeId, message);
     }
 
     public Message handleHeartbeat(Message message) {

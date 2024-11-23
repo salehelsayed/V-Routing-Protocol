@@ -1,66 +1,103 @@
 package com.vrouting.vrouting.controller;
 
 import com.vrouting.simulation.SimulationEngine;
-import com.vrouting.simulation  .SimulationMetrics;
+import com.vrouting.simulation.SimulationMetrics;
+import com.vrouting.vrouting.model.SimulationRequest;
+import com.vrouting.vrouting.model.SimulationResponse;
+import com.vrouting.vrouting.service.SimulationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/simulation")
 public class SimulationController {
+    private static final Logger logger = LoggerFactory.getLogger(SimulationController.class);
+    private final SimulationService simulationService;
 
-    private SimulationEngine engine;
+    @Autowired
+    public SimulationController(SimulationService simulationService) {
+        this.simulationService = simulationService;
+        logger.info("SimulationController initialized");
+    }
 
     @PostMapping("/start")
-    public ResponseEntity<String> startSimulation(@RequestBody SimulationConfig config) {
-        engine = new SimulationEngine(
-            config.getNodeCount(),
-            config.getFailureProbability(),
-            config.getRecoveryProbability(),
-            config.getMessageGenerationProbability(),
-            config.getSimulationSteps()
-        );
-        return ResponseEntity.ok("Simulation initialized");
+    public ResponseEntity<SimulationResponse> startSimulation(@RequestBody SimulationRequest request) {
+        logger.info("Received simulation request: {}", request);
+        
+        // Validate request
+        if (request.getNodeCount() <= 0) {
+            SimulationResponse response = new SimulationResponse();
+            response.setSuccess(false);
+            response.setMessage("Node count must be greater than 0");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        if (request.getDuration() <= 0) {
+            SimulationResponse response = new SimulationResponse();
+            response.setSuccess(false);
+            response.setMessage("Duration must be greater than 0");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        SimulationResponse response = simulationService.startSimulation(request);
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/step")
-    public ResponseEntity<String> stepSimulation() {
-        if (engine == null) {
-            return ResponseEntity.badRequest().body("Simulation not initialized");
-        }
-        engine.simulateStep();
-        return ResponseEntity.ok("Step completed");
+    @PostMapping("/{simulationId}/stop")
+    public ResponseEntity<Void> stopSimulation(@PathVariable String simulationId) {
+        logger.info("Stopping simulation: {}", simulationId);
+        simulationService.stopSimulation(simulationId);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/metrics")
-    public ResponseEntity<List<SimulationMetrics>> getMetrics() {
-        if (engine == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        return ResponseEntity.ok(engine.getMetrics());
+    @PostMapping("/{simulationId}/step")
+    public ResponseEntity<String> stepSimulation(@PathVariable String simulationId) {
+        return ResponseEntity.ok(simulationService.stepSimulation(simulationId));
+    }
+
+    @GetMapping("/{simulationId}/metrics")
+    public ResponseEntity<List<SimulationMetrics>> getMetrics(@PathVariable String simulationId) {
+        return ResponseEntity.ok(simulationService.getMetrics(simulationId));
+    }
+
+    @GetMapping("/{simulationId}/status")
+    public ResponseEntity<Map<String, Object>> getStatus(@PathVariable String simulationId) {
+        return ResponseEntity.ok(simulationService.getStatus(simulationId));
     }
 
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getStatus() {
-        if (engine == null) {
+    public ResponseEntity<Map<String, Object>> getCurrentStatus() {
+        String latestSimulationId = simulationService.getLatestSimulationId();
+        if (latestSimulationId == null) {
             return ResponseEntity.ok(Map.of(
                 "initialized", false,
                 "simulationComplete", false,
-                "stepsCompleted", 0
+                "stepsCompleted", 0,
+                "totalSteps", 0,
+                "error", "No active simulation"
             ));
         }
+        return ResponseEntity.ok(simulationService.getStatus(latestSimulationId));
+    }
 
-        Map<String, Object> status = new HashMap<>();
-        status.put("initialized", true);
-        status.put("simulationComplete", engine.isSimulationComplete());
-        status.put("stepsCompleted", engine.getCurrentStep());
-        status.put("totalSteps", engine.getSimulationSteps());
-        return ResponseEntity.ok(status);
+    @GetMapping("/metrics")
+    public ResponseEntity<List<SimulationMetrics>> getCurrentMetrics() {
+        String latestSimulationId = simulationService.getLatestSimulationId();
+        if (latestSimulationId == null) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        return ResponseEntity.ok(simulationService.getMetrics(latestSimulationId));
     }
 }
 
