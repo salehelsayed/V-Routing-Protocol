@@ -2,12 +2,8 @@ package com.vrouting.vrouting.controller;
 
 import com.vrouting.simulation.SimulationEngine;
 import com.vrouting.simulation.SimulationMetrics;
-import com.vrouting.vrouting.model.SimulationRequest;
-import com.vrouting.vrouting.model.SimulationResponse;
-import com.vrouting.vrouting.service.SimulationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -19,85 +15,64 @@ import java.util.Collections;
 @RestController
 @RequestMapping("/api/simulation")
 public class SimulationController {
-    private static final Logger logger = LoggerFactory.getLogger(SimulationController.class);
-    private final SimulationService simulationService;
 
-    @Autowired
-    public SimulationController(SimulationService simulationService) {
-        this.simulationService = simulationService;
-        logger.info("SimulationController initialized");
-    }
+    private static final Logger logger = LoggerFactory.getLogger(SimulationController.class);
+    private SimulationEngine engine;
 
     @PostMapping("/start")
-    public ResponseEntity<SimulationResponse> startSimulation(@RequestBody SimulationRequest request) {
-        logger.info("Received simulation request: {}", request);
-        
-        // Validate request
-        if (request.getNodeCount() <= 0) {
-            SimulationResponse response = new SimulationResponse();
-            response.setSuccess(false);
-            response.setMessage("Node count must be greater than 0");
-            return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<String> startSimulation(@RequestBody SimulationConfig config) {
+        logger.info("Starting simulation with config: {}", config);
+        engine = new SimulationEngine(
+            config.getNodeCount(),
+            config.getFailureProbability(),
+            config.getRecoveryProbability(),
+            config.getMessageGenerationProbability(),
+            config.getSimulationSteps()
+        );
+        logger.info("Simulation initialized");
+        return ResponseEntity.ok("Simulation initialized");
+    }
+
+    @PostMapping("/step")
+    public ResponseEntity<String> stepSimulation() {
+        if (engine == null) {
+            logger.warn("Attempted to step simulation but it is not initialized");
+            return ResponseEntity.badRequest().body("Simulation not initialized");
         }
-        
-        if (request.getDuration() <= 0) {
-            SimulationResponse response = new SimulationResponse();
-            response.setSuccess(false);
-            response.setMessage("Duration must be greater than 0");
-            return ResponseEntity.badRequest().body(response);
-        }
-        
-        SimulationResponse response = simulationService.startSimulation(request);
-        if (!response.isSuccess()) {
-            return ResponseEntity.badRequest().body(response);
-        }
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/{simulationId}/stop")
-    public ResponseEntity<Void> stopSimulation(@PathVariable String simulationId) {
-        logger.info("Stopping simulation: {}", simulationId);
-        simulationService.stopSimulation(simulationId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/{simulationId}/step")
-    public ResponseEntity<String> stepSimulation(@PathVariable String simulationId) {
-        return ResponseEntity.ok(simulationService.stepSimulation(simulationId));
-    }
-
-    @GetMapping("/{simulationId}/metrics")
-    public ResponseEntity<List<SimulationMetrics>> getMetrics(@PathVariable String simulationId) {
-        return ResponseEntity.ok(simulationService.getMetrics(simulationId));
-    }
-
-    @GetMapping("/{simulationId}/status")
-    public ResponseEntity<Map<String, Object>> getStatus(@PathVariable String simulationId) {
-        return ResponseEntity.ok(simulationService.getStatus(simulationId));
-    }
-
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getCurrentStatus() {
-        String latestSimulationId = simulationService.getLatestSimulationId();
-        if (latestSimulationId == null) {
-            return ResponseEntity.ok(Map.of(
-                "initialized", false,
-                "simulationComplete", false,
-                "stepsCompleted", 0,
-                "totalSteps", 0,
-                "error", "No active simulation"
-            ));
-        }
-        return ResponseEntity.ok(simulationService.getStatus(latestSimulationId));
+        logger.info("Performing simulation step");
+        engine.simulateStep();
+        logger.info("Simulation step completed");
+        return ResponseEntity.ok("Step completed");
     }
 
     @GetMapping("/metrics")
-    public ResponseEntity<List<SimulationMetrics>> getCurrentMetrics() {
-        String latestSimulationId = simulationService.getLatestSimulationId();
-        if (latestSimulationId == null) {
-            return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<SimulationMetrics>> getMetrics() {
+        if (engine == null) {
+            logger.warn("Attempted to get metrics but simulation is not initialized");
+            return ResponseEntity.badRequest().body(null);
         }
-        return ResponseEntity.ok(simulationService.getMetrics(latestSimulationId));
+        logger.info("Fetching simulation metrics");
+        return ResponseEntity.ok(engine.getMetrics());
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getStatus() {
+        if (engine == null) {
+            logger.info("Simulation not initialized, returning default status");
+            return ResponseEntity.ok(Map.of(
+                "initialized", false,
+                "simulationComplete", false,
+                "stepsCompleted", 0
+            ));
+        }
+
+        Map<String, Object> status = new HashMap<>();
+        status.put("initialized", true);
+        status.put("simulationComplete", engine.isSimulationComplete());
+        status.put("stepsCompleted", engine.getCurrentStep());
+        status.put("totalSteps", engine.getSimulationSteps());
+        logger.info("Fetching simulation status: {}", status);
+        return ResponseEntity.ok(status);
     }
 }
 

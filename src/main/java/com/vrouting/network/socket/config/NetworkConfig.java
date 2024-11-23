@@ -1,9 +1,14 @@
 package com.vrouting.network.socket.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Configuration settings for network operations.
  */
 public class NetworkConfig {
+    private static final Logger logger = LoggerFactory.getLogger(NetworkConfig.class);
+
     private final int port;
     private final int maxConnections;
     private final int bufferSize;
@@ -27,6 +32,7 @@ public class NetworkConfig {
         this.clusterHeadThreshold = builder.clusterHeadThreshold;
         this.maxNetworkDepth = builder.maxNetworkDepth;
         this.maxClusterSize = builder.maxClusterSize;
+        logger.info("NetworkConfig initialized");
     }
     
     public static class Builder {
@@ -139,5 +145,11 @@ public class NetworkConfig {
     
     public static NetworkConfig getDefault() {
         return new Builder().build();
+    }
+
+    public void configure() {
+        logger.debug("Configuring network settings");
+        // ... existing code ...
+        logger.info("Network configuration completed");
     }
 }

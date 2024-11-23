@@ -6,8 +6,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import com.vrouting.network.socket.message.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PeerDirectory {
+    private static final Logger logger = LoggerFactory.getLogger(PeerDirectory.class);
+
     private final Node node;
     private final Map<String, PeerInfo> peers;
     private final Map<String, Set<String>> adjacencyMatrix;

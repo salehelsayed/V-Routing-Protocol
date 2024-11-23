@@ -51,6 +51,14 @@
             background-color: #9E9E9E;
             color: white;
         }
+        .logs-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +114,11 @@
                 <!-- Metrics will be populated here -->
             </tbody>
         </table>
+    </div>
+
+    <div class="logs-container">
+        <h3>Application Logs</h3>
+        <pre id="logsContent">Loading logs...</pre>
     </div>
 
     <script>
@@ -235,6 +248,24 @@
             metricsChart.data.datasets[1].data = deliveryRates;
             metricsChart.update();
         }
+
+        function fetchLogs() {
+            fetch('/logs')
+                .then(response => response.json())
+                .then(logs => {
+                    const logsContent = document.getElementById('logsContent');
+                    logsContent.textContent = logs.join('\n');
+                })
+                .catch(error => {
+                    console.error('Error fetching logs:', error);
+                });
+        }
+
+        // Fetch logs every 5 seconds
+        setInterval(fetchLogs, 5000);
+        fetchLogs(); // Initial fetch
     </script>
 </body>
 </html> 
+
+

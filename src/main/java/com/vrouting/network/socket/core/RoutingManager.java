@@ -223,4 +223,10 @@ public class RoutingManager {
                     STABILITY_WEIGHT * stabilityScore);
         }
     }
+    
+    public void routeMessage(Message message) {
+        logger.info("Routing message: {}", message);
+        // ... existing code ...
+        logger.debug("Message routed successfully");
+    }
 }

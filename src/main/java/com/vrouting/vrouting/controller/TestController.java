@@ -18,4 +18,14 @@ public class TestController {
         logger.info("Test endpoint called");
         return "API is working";
     }
+
+    @GetMapping("/error")
+    public String error() {
+        try {
+            throw new RuntimeException("Simulated error");
+        } catch (Exception e) {
+            logger.error("An error occurred: {}", e.getMessage());
+            return "Error occurred";
+        }
+    }
 }

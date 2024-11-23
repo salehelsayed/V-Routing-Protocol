@@ -1,5 +1,8 @@
 package com.vrouting.network.socket.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Represents the main phases a node can be in during its lifecycle.
  * Each phase has different characteristics in terms of heartbeat frequency,

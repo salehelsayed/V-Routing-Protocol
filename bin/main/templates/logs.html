@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Logs</title>
+</head>
+<body>
+    <h1>Application Logs</h1>
+    <div id="logContainer">
+        <pre th:text="${logs}"></pre>
+    </div>
+    <script>
+        fetch('/logs')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('logContainer').innerText = data.join('\n');
+            });
+    </script>
+</body>
+</html> 

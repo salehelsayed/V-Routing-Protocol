@@ -8,10 +8,15 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Handles network communication and socket operations.
  */
 public class NetworkInterface {
+    private static final Logger logger = LoggerFactory.getLogger(NetworkInterface.class);
+
     private final NetworkConfig config;
     private final ExecutorService executor;
     private final MessageHandler messageHandler;

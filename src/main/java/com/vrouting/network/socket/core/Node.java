@@ -171,4 +171,10 @@ public abstract class Node {
     protected abstract MessageHandler createMessageHandler();
     protected abstract void onStart();
     protected abstract void onStop();
+
+    public void updateState(NodeState state) {
+        logger.info("Updating state for node: {}", this);
+        // ... existing code ...
+        logger.debug("Node state updated to: {}", state);
+    }
 }
