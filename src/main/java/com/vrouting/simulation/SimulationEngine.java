@@ -4,7 +4,13 @@ import com.vrouting.network.Node;
 import com.vrouting.network.Cluster;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimulationEngine implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -20,6 +26,10 @@ public class SimulationEngine implements Serializable {
     private List<SimulationMetrics> metrics;
     private int currentStep;
     private boolean simulationComplete;
+    private int messagesSent = 0;
+    private int messagesDelivered = 0;
+    private double totalLatency = 0;
+    private static final Logger logger = LoggerFactory.getLogger(SimulationEngine.class);
 
     // Constructor
     public SimulationEngine(
@@ -68,10 +78,9 @@ public class SimulationEngine implements Serializable {
 
     // Start the simulation
     public void startSimulation() {
-        while (currentStep < simulationSteps && !simulationComplete) {
-            simulateStep();
-            currentStep++;
-        }
+        // Initialize the simulation but don't run any steps yet
+        // Steps will be executed one at a time through simulateStep()
+        logger.info("Simulation initialized with {} nodes and {} total steps", nodes.size(), simulationSteps);
     }
 
     // Simulate a single step
@@ -109,7 +118,6 @@ public class SimulationEngine implements Serializable {
     }
 
     private void generateMessageFromNode(Node node) {
-        // For simplicity, message is sent to a random active node
         List<Node> activeNodes = getActiveNodes();
         if (activeNodes.size() > 1) {
             Node targetNode;
@@ -117,9 +125,26 @@ public class SimulationEngine implements Serializable {
                 targetNode = activeNodes.get(random.nextInt(activeNodes.size()));
             } while (targetNode.equals(node));
 
-            // Simulate message delivery (for simplicity, assume successful delivery)
-            // In a real scenario, routing logic would be applied here
+            messagesSent++;
+            
+            // Simulate message delivery with routing
+            if (canDeliverMessage(node, targetNode)) {
+                messagesDelivered++;
+                totalLatency += calculateMessageLatency(node, targetNode);
+            }
         }
+    }
+
+    private boolean canDeliverMessage(Node source, Node target) {
+        // Simple simulation of message delivery success
+        // In a real implementation, this would check routing tables and network conditions
+        return source.isActive() && target.isActive() && random.nextDouble() > 0.1; // 90% success rate
+    }
+
+    private double calculateMessageLatency(Node source, Node target) {
+        // Simple latency calculation based on number of hops
+        // In a real implementation, this would use actual network topology
+        return 1.0 + random.nextDouble() * 2.0; // Random latency between 1-3 ms
     }
 
     private List<Node> getActiveNodes() {
@@ -154,25 +179,20 @@ public class SimulationEngine implements Serializable {
         metrics.add(metric);
     }
 
-    // Placeholder methods for metrics calculations
     private double calculateMessageDeliveryRate() {
-        // Placeholder implementation
-        return 0.0; // For MVP, return default value
+        return messagesSent > 0 ? (double) messagesDelivered / messagesSent : 0.0;
     }
 
     private double calculateAverageLatency() {
-        // Placeholder implementation
-        return 0.0; // For MVP, return default value
+        return messagesDelivered > 0 ? totalLatency / messagesDelivered : 0.0;
     }
 
     private int getTotalMessagesSent() {
-        // Placeholder implementation
-        return 0; // For MVP, return default value
+        return messagesSent;
     }
 
     private int getTotalMessagesDelivered() {
-        // Placeholder implementation
-        return 0; // For MVP, return default value
+        return messagesDelivered;
     }
 
     // Getter methods
